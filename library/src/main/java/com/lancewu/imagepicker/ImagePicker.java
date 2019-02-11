@@ -26,8 +26,8 @@ import java.lang.annotation.RetentionPolicy;
  */
 public class ImagePicker {
 
-    // fragment的requestCode只能从低16位开始
-    private static final int REQUEST_CODE_START = 0xffff - 1;
+    // 尽可能避免重复，requestCode从低16位的高位开始
+    private static final int REQUEST_CODE_START = 0xffff;
     // 相机
     private static final int REQUEST_CODE_CAMERA = REQUEST_CODE_START - 1;
     // 图库
@@ -48,29 +48,24 @@ public class ImagePicker {
     private OnImagePickerCallback mCallback;
     // 界面调起者
     private Launcher mLauncher;
-    // 请求码：打开相机
-    private int mRequestCodeCamera = REQUEST_CODE_CAMERA;
-    // 请求码：打开图库
-    private int mRequestCodeGallery = REQUEST_CODE_GALLERY;
-    // 请求码：打开裁剪
-    private int mRequestCodeCrop = REQUEST_CODE_CROP;
     // 请求码：打开请求权限
-    private int mRequestCodePermission = REQUEST_CODE_PERMISSION;
+    private int mRequestCodePermission;
 
     private ImagePicker(Builder builder) {
+        mRequestCodePermission = builder.mRequestCodePermission;
         boolean justCrop = false;
         switch (builder.mPickerType) {
             case Builder.CAMERA_PICKER:
                 mPicker = new CameraPicker();
                 mPickerConfig = new PickerConfig();
-                mPickerConfig.setRequestCode(mRequestCodeCamera);
+                mPickerConfig.setRequestCode(builder.mRequestCodeCamera);
                 mPickerConfig.setActivity(builder.mActivity);
                 mPickerConfig.setImageFile(builder.mCameraPickerSaveFile);
                 break;
             case Builder.GALLERY_PICKER:
                 mPicker = new GalleryPicker();
                 mPickerConfig = new PickerConfig();
-                mPickerConfig.setRequestCode(mRequestCodeGallery);
+                mPickerConfig.setRequestCode(builder.mRequestCodeGallery);
                 mPickerConfig.setActivity(builder.mActivity);
                 break;
             case Builder.NONE_PICKER:
@@ -88,7 +83,7 @@ public class ImagePicker {
         mCrop = builder.mCrop;
         if (mCrop != null) {
             mCropConfig = new CropConfig();
-            mCropConfig.setRequestCode(mRequestCodeCrop);
+            mCropConfig.setRequestCode(builder.mRequestCodeCrop);
             mCropConfig.setActivity(builder.mActivity);
             // 配置裁剪参数
             CropConfigBuilder cropConfigBuilder = builder.mCropConfigBuilder;
@@ -312,7 +307,7 @@ public class ImagePicker {
         /**
          * 从图库选择
          *
-         * @param requestCode 开启图库页面请求码，出现请求码重复时可设置
+         * @param requestCode 开启图库页面请求码，出现请求码重复时可设置，默认值{@link #REQUEST_CODE_GALLERY}
          * @return this
          */
         public Builder fromGallery(int requestCode) {
@@ -335,7 +330,7 @@ public class ImagePicker {
          * 从相机选择
          *
          * @param file        拍照的图片要存储的文件
-         * @param requestCode 开启相机页面请求码，出现请求码重复时可设置
+         * @param requestCode 开启相机页面请求码，出现请求码重复时可设置，默认值{@link #REQUEST_CODE_CAMERA}
          * @return this
          */
         public Builder fromCamera(@NonNull File file, int requestCode) {
@@ -363,6 +358,7 @@ public class ImagePicker {
          *
          * @param crop              裁剪器
          * @param cropConfigBuilder 裁剪参数构造器
+         * @param requestCode       开启裁剪页面请求码，出现请求码重复时可设置，默认值{@link #REQUEST_CODE_CROP}
          * @return this
          */
         public Builder withCrop(@NonNull Crop crop, @NonNull CropConfigBuilder cropConfigBuilder, int requestCode) {
@@ -375,7 +371,7 @@ public class ImagePicker {
         /**
          * 设置权限请求码
          *
-         * @param requestCode 开启权限请求码，出现请求码重复时可设置
+         * @param requestCode 开启权限请求码，出现请求码重复时可设置，默认值{@link #REQUEST_CODE_PERMISSION}
          * @return this
          */
         public Builder permissionRequestCode(int requestCode) {
