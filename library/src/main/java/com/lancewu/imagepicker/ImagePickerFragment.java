@@ -14,6 +14,8 @@ import android.support.annotation.NonNull;
 
 import com.lancewu.imagepicker.util.LogUtil;
 
+import java.util.Arrays;
+
 /**
  * Created by LanceWu on 2019/1/31.<br/>
  * 无界面Fragment，用于申请权限以及返回结果处理
@@ -21,7 +23,8 @@ import com.lancewu.imagepicker.util.LogUtil;
 public class ImagePickerFragment extends Fragment {
 
     // 权限组
-    public static final String[] PERMISSIONS = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    public static final String[] PERMISSIONS = new String[]{
+            Manifest.permission.WRITE_EXTERNAL_STORAGE};
     // 权限请求码
     private int mPermissionRequestCode;
     // 选择器
@@ -76,8 +79,13 @@ public class ImagePickerFragment extends Fragment {
         }
         boolean granted = false;
         try {
-            granted = getActivity().checkPermission(PERMISSIONS[0], Process.myPid(), Process.myUid())
-                    == PackageManager.PERMISSION_GRANTED;
+            for (String permission : PERMISSIONS) {
+                granted = getActivity().checkPermission(permission, Process.myPid(), Process.myUid())
+                        == PackageManager.PERMISSION_GRANTED;
+                if (!granted) {
+                    break;
+                }
+            }
         } catch (Exception e) {
             LogUtil.e("checkPermission", e);
         }
@@ -88,7 +96,14 @@ public class ImagePickerFragment extends Fragment {
         // 6.0动态申请存储权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // 申请WRITE_EXTERNAL_STORAGE权限
-            if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            boolean shouldShowRationale = false;
+            for (String permission : PERMISSIONS) {
+                shouldShowRationale = shouldShowRequestPermissionRationale(permission);
+                if (shouldShowRationale) {
+                    break;
+                }
+            }
+            if (shouldShowRationale) {
                 // 用户点过拒绝，未勾选不再询问
                 LogUtil.d("shouldShowRequestPermissionRationale,just requestPermissions");
                 requestPermissions(PERMISSIONS, requestCode);
@@ -104,14 +119,14 @@ public class ImagePickerFragment extends Fragment {
     }
 
     private void notifyPermissionGranted() {
-        LogUtil.d("WRITE_EXTERNAL_STORAGE granted.");
+        LogUtil.d("permission granted：" + Arrays.toString(PERMISSIONS) + ".VERSION=" + Build.VERSION.SDK_INT);
         if (mCheckPermissionCallback != null) {
             mCheckPermissionCallback.onGranted();
         }
     }
 
     private void notifyPermissionDenied() {
-        LogUtil.d("WRITE_EXTERNAL_STORAGE denied.VERSION=" + Build.VERSION.SDK_INT);
+        LogUtil.d("permission denied:" + Arrays.toString(PERMISSIONS) + ".VERSION=" + Build.VERSION.SDK_INT);
         if (mCheckPermissionCallback != null) {
             mCheckPermissionCallback.onDenied();
         }
@@ -125,7 +140,13 @@ public class ImagePickerFragment extends Fragment {
             return;
         }
         // If request is cancelled, the result arrays are empty.
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (grantResults.length > 0) {
+            for (int grantResult : grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    notifyPermissionDenied();
+                    break;
+                }
+            }
             // 权限申请通过
             notifyPermissionGranted();
         } else {

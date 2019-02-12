@@ -1,9 +1,13 @@
 package com.lancewu.imagepicker.util;
 
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 
@@ -17,19 +21,6 @@ import java.io.FileOutputStream;
  * @since 13-4-11 下午2:48
  */
 public class ContentResolverUtils {
-
-    /**
-     * 保存Uri里面的内容到本地文件
-     *
-     * @param pContext     上下文
-     * @param pSrcUri      待保存uri路径
-     * @param pDstFilePath 保存的真实路径地址
-     * @return true保存成功，false保存失败
-     * @see #saveUriContent2File(Context, Uri, String)
-     */
-    public static boolean saveUriContent(Context pContext, Uri pSrcUri, String pDstFilePath) {
-        return saveUriContent2File(pContext, pSrcUri, pDstFilePath);
-    }
 
     /**
      * 保存Uri里面的内容到本地文件
@@ -52,115 +43,184 @@ public class ContentResolverUtils {
     }
 
     /**
-     * 从URI中获取图片真实路径
+     * Get a file path from a Uri. This will get the the path for Storage Access
+     * Framework Documents, as well as the _data field for the MediaStore and
+     * other file-based ContentProviders.
      *
-     * @param pContext 上下文
-     * @param uri      文件所在的uri
-     * @return 最终路径
+     * @param context The context.
+     * @param uri     The Uri to query.
+     * @author paulburke
      */
-    public static String getRealPathFromUri(Context pContext, Uri uri) {
-        if (null == uri) {
-            return null;
+    public static String getRealPathFromUri(final Context context, final Uri uri) {
+        // 4.4开始DocumentProvider
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
+                && DocumentsContract.isDocumentUri(context, uri)) {
+            // ExternalStorageProvider
+            // content://com.android.externalstorage.documents/document/primary%3Acamera.jpg
+            if (isExternalStorageDocument(uri)) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(":");
+                final String type = split[0];
+
+                // This is for checking Main Memory
+                if ("primary".equalsIgnoreCase(type)) {
+                    if (split.length > 1) {
+                        return Environment.getExternalStorageDirectory() + "/" + split[1];
+                    } else {
+                        return Environment.getExternalStorageDirectory() + "/";
+                    }
+                    // This is for checking SD Card
+                } else {
+                    return "storage" + "/" + docId.replace(":", "/");
+                }
+            }
+            // DownloadsProvider
+            else if (isDownloadsDocument(uri)) {
+                final String id = DocumentsContract.getDocumentId(uri);
+
+                if (!TextUtils.isEmpty(id)) {
+                    // content://com.android.providers.downloads.documents/document/raw%3A%2Fstorage%2Femulated%2F0%2FDownload%2FFMessage%2F1542189845307_flyme.jpg
+                    if (id.startsWith("raw:")) {
+                        return id.replaceFirst("raw:", "");
+                    }
+                    // content://com.android.providers.downloads.documents/document/19
+                    long idLong;
+                    try {
+                        idLong = Long.valueOf(id);
+                    } catch (NumberFormatException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                    String[] downloadUris = new String[]{
+                            "content://downloads/public_downloads",
+                    };
+                    for (String downloadUri : downloadUris) {
+                        final Uri contentUri = ContentUris.withAppendedId(Uri.parse(downloadUri), idLong);
+                        String path = getDataColumn(context, contentUri, null, null);
+                        if (path != null) {
+                            return path;
+                        }
+                    }
+                }
+            }
+            // MediaProvider
+            else if (isMediaDocument(uri)) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(":");
+                final String type = split[0];
+
+                Uri contentUri = null;
+                // content://com.android.providers.media.documents/document/image%3A311400
+                if ("image".equals(type)) {
+                    contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                } else if ("video".equals(type)) {
+                    contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                } else if ("audio".equals(type)) {
+                    contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                }
+
+                final String selection = "_id=?";
+                final String[] selectionArgs = new String[]{
+                        split[1]
+                };
+
+                return getDataColumn(context, contentUri, selection, selectionArgs);
+            }
         }
-        String scheme = uri.getScheme();
-        if (TextUtils.isEmpty(scheme)) {
-            return null;
+        // MediaStore (and general)
+        else if (ContentResolver.SCHEME_CONTENT.equalsIgnoreCase(uri.getScheme())) {
+
+            // Return the remote address
+            if (isGooglePhotosUri(uri)) {
+                return uri.getLastPathSegment();
+            }
+
+            // content://media/external/images/media/311366
+            return getDataColumn(context, uri, null, null);
+        }
+        // File
+        // file:///storage/emulated/0/Android/data/com.dropbox.android/files/scratch/go.png
+        else if (ContentResolver.SCHEME_FILE.equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
         }
 
-        if (uri.toString().startsWith("content://com.android.providers")) {// 4.4以上的uri格式
-            // :content://com.android.providers.media.documents/document/image%3A137638
-            return resolveDocumentProviderUri(pContext, uri);
-        } else if (ContentResolver.SCHEME_FILE.equals(scheme)) {// file:///storage/emulated/0/Android/data/com.dropbox.android/files/scratch/go.png
-            String uriStr = uri.toString();
-            int index = "file://".length() + 1;
-            if (uriStr.length() > index) {
-                return uriStr.substring(index);
-            }
-        } else if (uri.toString().startsWith("content://media")) {// content://media/external/images/media/65360
-            return resolveMediaUri(pContext, uri);
-        }
         return null;
     }
 
     /**
-     * 解析Document Provider的图片资源，返回uri指向的文件的真实绝对路径
+     * Get the value of the data column for this Uri. This is useful for
+     * MediaStore Uris, and other file-based ContentProviders.
      *
-     * @param context 上下文
-     * @param uri     文件所在的uri
-     * @return 最终路径
+     * @param context       The context.
+     * @param uri           The Uri to query.
+     * @param selection     (Optional) Filter used in the query.
+     * @param selectionArgs (Optional) Selection arguments used in the query.
+     * @return The value of the _data column, which is typically a file path.
      */
-    private static String resolveDocumentProviderUri(Context context, Uri uri) {
-        String result = null;
+    public static String getDataColumn(Context context, Uri uri, String selection,
+                                       String[] selectionArgs) {
         Cursor cursor = null;
+        final String column = MediaStore.MediaColumns.DATA;
+        final String[] projection = {
+                column
+        };
+
         try {
-            // 获得资源唯一ID
-            String temp = uri.toString();
-            int lastSlash = temp.lastIndexOf("%");
-            String subTemp = temp.substring(lastSlash + 1, temp.length());
-            lastSlash = subTemp.lastIndexOf("A");
-            String wholeID = subTemp.substring(lastSlash + 1, subTemp.length());
-            // 定义索引字段
-            String[] selectionArgs = {wholeID};
-            cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null, "_id = ?",
-                    selectionArgs, null);
-            if (cursor != null) {
-                int DATA_COLUMN_INDEX = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
-                while (cursor.moveToNext()) {
-                    // DATA字段就是本地资源的全路径
-                    result = cursor.getString(DATA_COLUMN_INDEX);
-                }
-            } else {
-                result = "";
+            cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs,
+                    null);
+            if (cursor != null && cursor.moveToFirst()) {
+                final int index = cursor.getColumnIndexOrThrow(column);
+                return cursor.getString(index);
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
-            // 切记要关闭游标
             if (cursor != null) {
                 cursor.close();
             }
         }
-        return result;
+        return null;
+    }
+
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is ExternalStorageProvider.
+     */
+    public static boolean isExternalStorageDocument(Uri uri) {
+        return "com.android.externalstorage.documents".equals(uri.getAuthority());
     }
 
     /**
-     * 从URI中获取图片真实路径
-     *
-     * @param pContext   上下文
-     * @param contentUri 文件所在的uri
-     * @return 最终路径
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is DownloadsProvider.
      */
-    private static String resolveMediaUri(Context pContext, Uri contentUri) {
-        if (null == contentUri) {
-            return null;
-        }
+    public static boolean isDownloadsDocument(Uri uri) {
+        return "com.android.providers.downloads.documents".equals(uri.getAuthority());
+    }
 
-        String[] projection = {MediaStore.Images.Media.DATA};
-        Cursor cursor = null;
-        try {
-            cursor = pContext.getContentResolver().query(contentUri, // 内容的uri
-                    projection, // Which columns to return
-                    null, // WHERE clause; which rows to return (all rows)
-                    null, // WHERE clause selection arguments (none)
-                    null); // Order-by clause (ascending by name)
-            String finalFilePath = null;
-            if (cursor != null) {
-                int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-                cursor.moveToFirst();
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is MediaProvider.
+     */
+    public static boolean isMediaDocument(Uri uri) {
+        return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
 
-                if (cursor.getCount() != 0) {
-                    finalFilePath = cursor.getString(column_index);
-                }
-            } else {
-                finalFilePath = contentUri.getPath();
-            }
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is Google Photos.
+     */
+    public static boolean isGooglePhotosUri(Uri uri) {
+        return "com.google.android.apps.photos.content".equals(uri.getAuthority());
+    }
 
-            return finalFilePath;
-        } finally {
-            if (cursor != null && !cursor.isClosed()) {
-                cursor.close();
-            }
-        }
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is Google Photos.
+     */
+    public static boolean isGooglePlayPhotosUri(Uri uri) {
+        return "com.google.android.apps.photos.contentprovider".equals(uri.getAuthority());
     }
 
 }

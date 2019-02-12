@@ -30,7 +30,7 @@ public class MediaUtil {
         // 如果无法从路径中获取到图片的真实路径，则采用拷贝复制流的方式，生成临时的真实路径
         if (TextUtils.isEmpty(filepath)) {
             filepath = generateTempFilepath(context);
-            boolean success = ContentResolverUtils.saveUriContent(context, localUri, filepath);
+            boolean success = ContentResolverUtils.saveUriContent2File(context, localUri, filepath);
             if (success) {
                 if (!new File(filepath).exists()) {
                     filepath = null;

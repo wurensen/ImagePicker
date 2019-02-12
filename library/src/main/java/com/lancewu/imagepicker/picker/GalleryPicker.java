@@ -19,7 +19,7 @@ import java.io.File;
 public class GalleryPicker implements Picker {
 
     // type，取图片类型
-    private static final String IMAGE_INTENT_TYPE = "image/*";
+    private static final String INTENT_IMAGE_TYPE = "image/*";
     // 配置
     private PickerConfig mPickerConfig;
 
@@ -31,7 +31,7 @@ public class GalleryPicker implements Picker {
             return false;
         }
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType(IMAGE_INTENT_TYPE);
+        intent.setType(INTENT_IMAGE_TYPE);
         ComponentName componentName = intent.resolveActivity(activity.getPackageManager());
         if (componentName == null) {
             // 不存在对应类型的activity
