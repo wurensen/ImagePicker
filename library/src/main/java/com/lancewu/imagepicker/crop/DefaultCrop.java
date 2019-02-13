@@ -12,7 +12,7 @@ import android.support.annotation.Nullable;
 
 import com.lancewu.imagepicker.launcher.Launcher;
 import com.lancewu.imagepicker.provider.ImagePickerFileProvider;
-import com.lancewu.imagepicker.util.LogUtil;
+import com.lancewu.imagepicker.util.LogUtils;
 
 import java.io.File;
 
@@ -22,8 +22,10 @@ import java.io.File;
  */
 public class DefaultCrop implements Crop {
 
-    // 裁剪文件
-    private File mCropFile;
+    // 裁剪action
+    private static final String ACTION_CROP = "com.android.camera.action.CROP";
+    // 裁剪文件Uri
+    private Uri mOutputUri;
 
     @Override
     public boolean crop(@NonNull CropConfig cropConfig, @NonNull Launcher launcher) {
@@ -31,31 +33,43 @@ public class DefaultCrop implements Crop {
         if (activity == null) {
             return false;
         }
-        File inputFile = cropConfig.getInputImageFile();
-        if (inputFile == null) {
-            return false;
-        }
-        Intent intent = new Intent("com.android.camera.action.CROP");
+        Intent intent;
         // 设置传入图片的uri
-        Uri inputUri;
-        // 7.0开始需要权限，uri需要适配
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            inputUri = ImagePickerFileProvider.getUriForFile(activity, inputFile);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        Uri inputUri = cropConfig.getInputImageUri();
+        if (inputUri == null) {
+            File inputFile = cropConfig.getInputImageFile();
+            if (inputFile == null) {
+                return false;
+            }
+            LogUtils.d("DefaultCrop start crop,inputFile=" + inputFile);
+            intent = new Intent(ACTION_CROP);
+            // 7.0开始需要权限，uri需要适配
+            if (isUpAPI24()) {
+                inputUri = ImagePickerFileProvider.getUriForFile(activity, inputFile);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } else {
+                inputUri = Uri.fromFile(inputFile);
+            }
         } else {
-            inputUri = Uri.fromFile(inputFile);
+            intent = new Intent(ACTION_CROP);
+            if (isUpAPI24()) {
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            }
         }
         intent.setDataAndType(inputUri, "image/*");
 
         // 设置裁剪后保存的图片uri
-        mCropFile = cropConfig.getOutputImageFile();
-        File outputFile = mCropFile;
+        File outputFile = cropConfig.getOutputImageFile();
         if (outputFile == null) {
             return false;
         }
-        Uri outputUri = Uri.fromFile(outputFile);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, outputUri);
+        mOutputUri = Uri.fromFile(outputFile);
+        // 输出到指定Uri
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, mOutputUri);
+        // 是否保留比例
+//        intent.putExtra("scale", false);
         // 设置裁剪
         intent.putExtra("crop", "true");
         // aspectX aspectY 是宽高的比例
@@ -73,15 +87,18 @@ public class DefaultCrop implements Crop {
         if (componentName == null) {
             return false;
         }
-        LogUtil.d("DefaultCrop start crop,inputFile=" + inputFile + ",inputUri=" + inputUri);
-        LogUtil.d("DefaultCrop start crop,outputFile=" + outputFile + ",outputUri=" + outputUri);
+        LogUtils.d("DefaultCrop start crop,inputUri=" + inputUri + "\noutputFile=" + outputFile);
         launcher.startActivityForResult(intent, cropConfig.getRequestCode());
         return true;
     }
 
+    private boolean isUpAPI24() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
+    }
+
     @Nullable
     @Override
-    public File onResult(Intent data) {
-        return mCropFile;
+    public Uri onResult(Intent data) {
+        return mOutputUri;
     }
 }

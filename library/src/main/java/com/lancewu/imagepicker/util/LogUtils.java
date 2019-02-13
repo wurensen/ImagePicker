@@ -8,7 +8,7 @@ import com.lancewu.imagepicker.BuildConfig;
  * Created by LanceWu on 2019/1/30.<br/>
  * 调试工具
  */
-public class LogUtil {
+public class LogUtils {
 
     private static final String TAG = "ImagePicker";
 

@@ -10,7 +10,7 @@ import java.io.File;
  * Date 2017/12/27
  * 多媒体资源工具
  */
-public class MediaUtil {
+public class MediaUtils {
 
     /**
      * 从媒体的的uri获取图片的真实路径
@@ -45,6 +45,6 @@ public class MediaUtil {
 
     private static String generateTempFilepath(Context context) {
         // 保存到app的cache文件夹下
-        return context.getExternalCacheDir() + File.separator + "image_picker_image_uri.tmp";
+        return context.getExternalCacheDir() + File.separator + "image_picker_image_uri.jpg";
     }
 }

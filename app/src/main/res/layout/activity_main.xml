@@ -30,6 +30,12 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:onClick="clickDocumentCrop"
+                android:text="文档+裁剪" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:onClick="clickCamera"
                 android:text="仅相机" />
 
@@ -38,6 +44,12 @@
                 android:layout_height="wrap_content"
                 android:onClick="clickGallery"
                 android:text="仅相册" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="clickDocument"
+                android:text="仅文档" />
 
             <Button
                 android:layout_width="wrap_content"

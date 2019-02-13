@@ -5,14 +5,13 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.Process;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 
-import com.lancewu.imagepicker.util.LogUtil;
+import com.lancewu.imagepicker.util.LogUtils;
 
 import java.util.Arrays;
 
@@ -47,6 +46,7 @@ public class ImagePickerFragment extends Fragment {
         ImagePickerFragment fragment = (ImagePickerFragment) fragmentManager.findFragmentByTag(tag);
         if (fragment == null) {
             fragment = new ImagePickerFragment();
+            fragment.setRetainInstance(true);
             FragmentTransaction transaction = fragmentManager.beginTransaction();
             transaction.add(fragment, tag);
             transaction.commitAllowingStateLoss();
@@ -56,8 +56,8 @@ public class ImagePickerFragment extends Fragment {
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
         if (mPendingCheck) {
             mPendingCheck = false;
             checkPermission(mPermissionRequestCode, mCheckPermissionCallback);
@@ -78,16 +78,19 @@ public class ImagePickerFragment extends Fragment {
             return;
         }
         boolean granted = false;
+        String deniedPermission = null;
         try {
             for (String permission : PERMISSIONS) {
-                granted = getActivity().checkPermission(permission, Process.myPid(), Process.myUid())
+                // 用兼容方法检查
+                granted = ActivityCompat.checkSelfPermission(getActivity(), permission)
                         == PackageManager.PERMISSION_GRANTED;
                 if (!granted) {
+                    deniedPermission = permission;
                     break;
                 }
             }
         } catch (Exception e) {
-            LogUtil.e("checkPermission", e);
+            LogUtils.e("checkPermission", e);
         }
         if (granted) {
             notifyPermissionGranted();
@@ -105,28 +108,29 @@ public class ImagePickerFragment extends Fragment {
             }
             if (shouldShowRationale) {
                 // 用户点过拒绝，未勾选不再询问
-                LogUtil.d("shouldShowRequestPermissionRationale,just requestPermissions");
+                LogUtils.d("shouldShowRequestPermissionRationale,just requestPermissions,requestCode="
+                        + requestCode);
                 requestPermissions(PERMISSIONS, requestCode);
                 return;
             }
             // 系统可以显示该权限的申请弹窗,则向系统申请该权限
-            LogUtil.d("requestPermissions");
+            LogUtils.d("requestPermissions,requestCode=" + requestCode);
             requestPermissions(PERMISSIONS, requestCode);
         } else {
             // 6.0以下无权限，直接回调无权限
-            notifyPermissionDenied();
+            notifyPermissionDenied(deniedPermission);
         }
     }
 
     private void notifyPermissionGranted() {
-        LogUtil.d("permission granted：" + Arrays.toString(PERMISSIONS) + ".VERSION=" + Build.VERSION.SDK_INT);
+        LogUtils.d("permission granted：" + Arrays.toString(PERMISSIONS) + ".VERSION=" + Build.VERSION.SDK_INT);
         if (mCheckPermissionCallback != null) {
             mCheckPermissionCallback.onGranted();
         }
     }
 
-    private void notifyPermissionDenied() {
-        LogUtil.d("permission denied:" + Arrays.toString(PERMISSIONS) + ".VERSION=" + Build.VERSION.SDK_INT);
+    private void notifyPermissionDenied(String... deniedPermissions) {
+        LogUtils.d("permission denied:" + Arrays.toString(deniedPermissions) + ".VERSION=" + Build.VERSION.SDK_INT);
         if (mCheckPermissionCallback != null) {
             mCheckPermissionCallback.onDenied();
         }
@@ -141,16 +145,17 @@ public class ImagePickerFragment extends Fragment {
         }
         // If request is cancelled, the result arrays are empty.
         if (grantResults.length > 0) {
-            for (int grantResult : grantResults) {
+            for (int i = 0; i < grantResults.length; i++) {
+                int grantResult = grantResults[i];
                 if (grantResult != PackageManager.PERMISSION_GRANTED) {
-                    notifyPermissionDenied();
-                    break;
+                    notifyPermissionDenied(permissions[i]);
+                    return;
                 }
             }
             // 权限申请通过
             notifyPermissionGranted();
         } else {
-            notifyPermissionDenied();
+            notifyPermissionDenied(permissions);
         }
     }
 

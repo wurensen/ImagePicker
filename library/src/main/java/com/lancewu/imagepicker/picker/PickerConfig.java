@@ -1,7 +1,6 @@
 package com.lancewu.imagepicker.picker;
 
 import android.app.Activity;
-import android.app.Fragment;
 
 import java.io.File;
 
@@ -13,8 +12,6 @@ public class PickerConfig {
 
     // 来源页面
     private Activity mActivity;
-    // 内嵌的fragment
-    private Fragment mFragment;
     // 请求码
     private int mRequestCode;
     // 图片文件

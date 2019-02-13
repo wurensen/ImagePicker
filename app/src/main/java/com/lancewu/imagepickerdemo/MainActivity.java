@@ -12,9 +12,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lancewu.imagepicker.ImagePicker;
+import com.lancewu.imagepicker.ImagePickerResult;
 import com.lancewu.imagepicker.OnImagePickerCallback;
+import com.lancewu.imagepicker.util.StreamUtils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,6 +65,19 @@ public class MainActivity extends AppCompatActivity {
         mPicker.pick(mCallback);
     }
 
+    public void clickDocumentCrop(View view) {
+        File file = new File(getExternalCacheDir(), "document_crop.jpg");
+        ImagePicker.CropConfigBuilder cropConfigBuilder = new ImagePicker.CropConfigBuilder()
+                .aspect(1, 1)
+                .outputSize(300, 300)
+                .outputFile(file);
+        mPicker = new ImagePicker.Builder(this)
+                .fromDocument()
+                .withCrop(cropConfigBuilder)
+                .build();
+        mPicker.pick(mCallback);
+    }
+
     public void clickCamera(View view) {
 //        File file = new File(getExternalCacheDir(), "camera.jpg");
         // SD卡需要动态申请权限
@@ -75,6 +91,13 @@ public class MainActivity extends AppCompatActivity {
     public void clickGallery(View view) {
         mPicker = new ImagePicker.Builder(this)
                 .fromGallery()
+                .build();
+        mPicker.pick(mCallback);
+    }
+
+    public void clickDocument(View view) {
+        mPicker = new ImagePicker.Builder(this)
+                .fromDocument()
                 .build();
         mPicker.pick(mCallback);
     }
@@ -124,20 +147,28 @@ public class MainActivity extends AppCompatActivity {
     private OnImagePickerCallback mCallback = new OnImagePickerCallback() {
         @Override
         public void onPickError(@ErrorCode int errorCode) {
-            showToast("发生错误：" + errorCode);
+            showToast("ImagePicker-发生错误：" + errorCode);
         }
 
         @Override
-        public void onPickSuccess(@NonNull File imageFile) {
-            Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
-            mImageView.setImageBitmap(bitmap);
-            String text = "图片信息：宽*高=" + bitmap.getWidth() + "*" + bitmap.getHeight();
-            mInfoTv.setText(text);
+        public void onPickSuccess(@NonNull ImagePickerResult result) {
+            InputStream inputStream = null;
+            try {
+                inputStream = getContentResolver().openInputStream(result.getImageUri());
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                mImageView.setImageBitmap(bitmap);
+                String text = "图片信息：宽*高=" + bitmap.getWidth() + "*" + bitmap.getHeight();
+                mInfoTv.setText(text);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } finally {
+                StreamUtils.close(inputStream);
+            }
         }
 
         @Override
         public void onPickCancel() {
-            showToast("取消选择");
+            showToast("ImagePicker-取消选择");
         }
 
         void showToast(String msg) {
