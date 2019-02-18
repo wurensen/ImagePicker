@@ -39,16 +39,17 @@ public class MainActivity extends AppCompatActivity {
     public void clickCameraCrop(View view) {
         // 从相机拍照并裁剪
         File file = new File(getExternalCacheDir(), "camera_crop.jpg");
-        // 动态申请存储权限
-//        File file = new File(Environment.getExternalStorageDirectory(), "camera_crop.jpg");
+        // 创建裁剪参数
         ImagePicker.CropConfigBuilder cropConfigBuilder = new ImagePicker.CropConfigBuilder()
-                .aspect(1, 2)
-                .outputSize(200, 400)
-                .outputFile(file);
+                .aspect(1, 2) // 比例1：2
+                .outputSize(200, 400) // 输出大小200*400
+                .outputFile(file);  // 最终文件保存路径
+        // 创建选择器
         mPicker = new ImagePicker.Builder(this)
-                .fromCamera(file)
-                .withCrop(cropConfigBuilder)
+                .fromCamera(file) // 表示从相机选择，并设置拍照保存文件
+                .withCrop(cropConfigBuilder) // 拍照完紧接裁剪
                 .build();
+        // 调用选图
         mPicker.pick(mCallback);
     }
 
@@ -147,13 +148,16 @@ public class MainActivity extends AppCompatActivity {
     private OnImagePickerCallback mCallback = new OnImagePickerCallback() {
         @Override
         public void onPickError(@ErrorCode int errorCode) {
+            // 发生错误，具体错误参考：@ErrorCode
             showToast("ImagePicker-发生错误：" + errorCode);
         }
 
         @Override
         public void onPickSuccess(@NonNull ImagePickerResult result) {
+            // 选图/裁剪回调
             InputStream inputStream = null;
             try {
+                // 从选择结果中取出文件Uri，进行想要的处理，这边直接显示
                 inputStream = getContentResolver().openInputStream(result.getImageUri());
                 Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
                 mImageView.setImageBitmap(bitmap);
@@ -168,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onPickCancel() {
+            // 主动取消选择/裁剪时回调
             showToast("ImagePicker-取消选择");
         }
 

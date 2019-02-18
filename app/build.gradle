@@ -25,5 +25,9 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation project(':library')
+
+    // 调试时采用本地依赖
+//    implementation project(':library')
+    // 使用时采用线上依赖
+    implementation 'com.lancewu:ImagePicker:0.0.1'
 }
