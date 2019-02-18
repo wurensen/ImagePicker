@@ -104,6 +104,7 @@ public class ImagePicker {
             mCropConfig.setAspectY(cropConfigBuilder.mAspectY);
             mCropConfig.setOutputX(cropConfigBuilder.mOutputX);
             mCropConfig.setOutputY(cropConfigBuilder.mOutputY);
+            mCropConfig.setFaceDetection(cropConfigBuilder.mFaceDetection);
             File outputImageFile = cropConfigBuilder.mOutputImageFile;
             if (outputImageFile == null) {
                 throw new IllegalArgumentException("cropConfigBuilder's outputImageFile must not set null.");
@@ -438,13 +439,15 @@ public class ImagePicker {
         // 裁剪后输出的图片文件
         private File mOutputImageFile;
         // 比例x
-        private int mAspectX = 1;
+        private int mAspectX = CropConfig.DEFAULT_ASPECT_X;
         // 比例y
-        private int mAspectY = 1;
+        private int mAspectY = CropConfig.DEFAULT_ASPECT_Y;
         // 裁剪大小
-        private int mOutputX = 200;
+        private int mOutputX = CropConfig.DEFAULT_OUTPUT_X;
         // 裁剪大小
-        private int mOutputY = 200;
+        private int mOutputY = CropConfig.DEFAULT_OUTPUT_Y;
+        // 默认的人脸识别
+        private boolean mFaceDetection;
 
         /**
          * 设置裁剪图片比例
@@ -469,6 +472,17 @@ public class ImagePicker {
         public CropConfigBuilder outputSize(int outputX, int outputY) {
             mOutputX = outputX;
             mOutputY = outputY;
+            return this;
+        }
+
+        /**
+         * 设置是否需要人脸识别（如果默认支持的话）
+         *
+         * @param faceDetection boolean
+         * @return this
+         */
+        public CropConfigBuilder faceDetection(boolean faceDetection) {
+            mFaceDetection = faceDetection;
             return this;
         }
 

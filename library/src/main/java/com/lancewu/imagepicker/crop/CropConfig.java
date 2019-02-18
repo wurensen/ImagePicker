@@ -11,14 +11,23 @@ import java.io.File;
  */
 public class CropConfig {
 
-    // 默认比例
-    private static final int DEFAULT_ASPECT_X = 1;
-    // 默认比例
-    private static final int DEFAULT_ASPECT_Y = 1;
-    // 默认输出大小
-    private static final int DEFAULT_OUTPUT_X = 200;
-    // 默认输出大小
-    private static final int DEFAULT_OUTPUT_Y = 200;
+    /**
+     * 默认比例
+     */
+    public static final int DEFAULT_ASPECT_X = 1;
+    /**
+     * 默认比例
+     */
+    public static final int DEFAULT_ASPECT_Y = 1;
+    /**
+     * 默认输出大小
+     */
+    public static final int DEFAULT_OUTPUT_X = 200;
+    /**
+     * 默认输出大小
+     */
+    public static final int DEFAULT_OUTPUT_Y = 200;
+
     // 来源页面
     private Activity mActivity;
     // 请求码
@@ -37,6 +46,8 @@ public class CropConfig {
     private int mOutputX = DEFAULT_OUTPUT_X;
     // 裁剪大小
     private int mOutputY = DEFAULT_OUTPUT_Y;
+    // 是否需要默认的人脸识别（如果支持的话）
+    private boolean mFaceDetection;
 
     public Activity getActivity() {
         return mActivity;
@@ -108,5 +119,13 @@ public class CropConfig {
 
     public void setAspectY(int aspectY) {
         mAspectY = aspectY;
+    }
+
+    public boolean isFaceDetection() {
+        return mFaceDetection;
+    }
+
+    public void setFaceDetection(boolean faceDetection) {
+        mFaceDetection = faceDetection;
     }
 }

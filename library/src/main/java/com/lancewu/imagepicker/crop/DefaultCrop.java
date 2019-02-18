@@ -80,8 +80,8 @@ public class DefaultCrop implements Crop {
         intent.putExtra("outputY", cropConfig.getOutputY());
         // 不需要直接返回图片，而是通过设置输出uri的方式
         intent.putExtra("return-data", false);
-        // 去除默认的人脸识别，否则和剪裁匡重叠
-        intent.putExtra("noFaceDetection", false);
+        // 设置是否需要默认的人脸识别
+        intent.putExtra("noFaceDetection", !cropConfig.isFaceDetection());
         intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.name());
         ComponentName componentName = intent.resolveActivity(activity.getPackageManager());
         if (componentName == null) {
