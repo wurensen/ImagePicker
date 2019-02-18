@@ -69,9 +69,10 @@ public class MainActivity extends AppCompatActivity {
     public void clickDocumentCrop(View view) {
         File file = new File(getExternalCacheDir(), "document_crop.jpg");
         ImagePicker.CropConfigBuilder cropConfigBuilder = new ImagePicker.CropConfigBuilder()
-                .aspect(1, 1)
-                .outputSize(300, 300)
-                .outputFile(file);
+                .aspect(1, 1) // 比例
+                .outputSize(300, 300) // 裁剪输出尺寸
+                .faceDetection(true) // 需要人脸识别
+                .outputFile(file); // 裁剪存储的文件
         mPicker = new ImagePicker.Builder(this)
                 .fromDocument()
                 .withCrop(cropConfigBuilder)
