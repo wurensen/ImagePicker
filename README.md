@@ -111,11 +111,11 @@ private OnImagePickerCallback mCallback = new OnImagePickerCallback() {
 
 ### 接口API
 
-[API概览](docs/index.html) 
+[API概览](https://wurensen.github.io/ImagePicker/docs/index.html) 
 
-[核心API-选择功能设置：ImagePicker.Builder](docs/com/lancewu/imagepicker/ImagePicker.Builder.html) 
+[核心API-选择功能设置：ImagePicker.Builder](https://wurensen.github.io/ImagePicker/docs/com/lancewu/imagepicker/ImagePicker.Builder.html) 
 
-[核心API-裁剪参数设置：ImagePicker.CropConfigBuilder](docs/com/lancewu/imagepicker/ImagePicker.CropConfigBuilder.html) 
+[核心API-裁剪参数设置：ImagePicker.CropConfigBuilder](https://wurensen.github.io/ImagePicker/docs/com/lancewu/imagepicker/ImagePicker.CropConfigBuilder.html) 
 
 ## Change Log
 
