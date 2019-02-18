@@ -1,6 +1,7 @@
 package com.lancewu.imagepicker.crop;
 
 import android.app.Activity;
+import android.net.Uri;
 
 import java.io.File;
 
@@ -26,6 +27,8 @@ public class CropConfig {
     private File mInputImageFile;
     // 裁剪后输出的图片文件
     private File mOutputImageFile;
+    // 输入的图片Uri
+    private Uri mInputImageUri;
     // 比例x
     private int mAspectX = DEFAULT_ASPECT_X;
     // 比例y
@@ -65,6 +68,14 @@ public class CropConfig {
 
     public void setOutputImageFile(File outputImageFile) {
         mOutputImageFile = outputImageFile;
+    }
+
+    public Uri getInputImageUri() {
+        return mInputImageUri;
+    }
+
+    public void setInputImageUri(Uri inputImageUri) {
+        mInputImageUri = inputImageUri;
     }
 
     public int getOutputX() {

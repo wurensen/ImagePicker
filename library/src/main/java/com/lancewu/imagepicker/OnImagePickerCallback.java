@@ -3,7 +3,6 @@ package com.lancewu.imagepicker;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
-import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -14,7 +13,7 @@ import java.lang.annotation.RetentionPolicy;
 public interface OnImagePickerCallback {
 
     /**
-     * 打开选择器失败
+     * 打开选择器失败（找不到支持类型的Activity）
      */
     int ERROR_START_PICKER = 1;
     /**
@@ -50,9 +49,9 @@ public interface OnImagePickerCallback {
     /**
      * 选择成功
      *
-     * @param imageFile 图片文件
+     * @param result 选择结果
      */
-    void onPickSuccess(@NonNull File imageFile);
+    void onPickSuccess(@NonNull ImagePickerResult result);
 
     /**
      * 取消选择

@@ -5,7 +5,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
 
-import com.lancewu.imagepicker.util.LogUtil;
+import com.lancewu.imagepicker.util.LogUtils;
 
 import java.io.File;
 
@@ -36,7 +36,7 @@ public class ImagePickerFileProvider extends FileProvider {
             return FileProvider.getUriForFile(context, getAuthority(), file);
         } catch (Exception e) {
             e.printStackTrace();
-            LogUtil.e("getUriForFile:" + file, e);
+            LogUtils.e("getUriForFile:" + file, e);
         }
         return Uri.EMPTY;
     }

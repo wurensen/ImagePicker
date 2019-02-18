@@ -1,12 +1,11 @@
 package com.lancewu.imagepicker.crop;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.lancewu.imagepicker.launcher.Launcher;
-
-import java.io.File;
 
 /**
  * Created by LanceWu on 2019/1/30.<br/>
@@ -25,8 +24,8 @@ public interface Crop {
      * 返回结果
      *
      * @param data 数据
-     * @return 图片文件
+     * @return 图片文件Uri
      */
     @Nullable
-    File onResult(Intent data);
+    Uri onResult(Intent data);
 }

@@ -12,7 +12,7 @@ import android.support.annotation.Nullable;
 
 import com.lancewu.imagepicker.launcher.Launcher;
 import com.lancewu.imagepicker.provider.ImagePickerFileProvider;
-import com.lancewu.imagepicker.util.LogUtil;
+import com.lancewu.imagepicker.util.LogUtils;
 
 import java.io.File;
 
@@ -23,7 +23,7 @@ import java.io.File;
 public class CameraPicker implements Picker {
 
     // 拍照要保存的文件
-    private File mTargetFile;
+    private Uri mTargetUri;
 
     @Override
     public boolean pick(@NonNull PickerConfig pickerConfig, @NonNull Launcher launcher) {
@@ -34,19 +34,20 @@ public class CameraPicker implements Picker {
         // 启动相机程序
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         // 创建一个file，用来存储拍照后的照片
-        mTargetFile = getCameraTargetFile(pickerConfig);
-        if (mTargetFile == null) {
+        File targetFile = getCameraTargetFile(pickerConfig);
+        if (targetFile == null) {
             return false;
         }
         Uri uri;
         // 7.0共享文件需要采用FileProvider的方式以及权限声明
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            uri = ImagePickerFileProvider.getUriForFile(activity, mTargetFile);
+            uri = ImagePickerFileProvider.getUriForFile(activity, targetFile);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         } else {
-            uri = Uri.fromFile(mTargetFile);
+            uri = Uri.fromFile(targetFile);
         }
+        mTargetUri = uri;
         intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
         intent.putExtra("return-data", false);
         intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.name());
@@ -54,10 +55,10 @@ public class CameraPicker implements Picker {
         ComponentName componentName = intent.resolveActivity(activity.getPackageManager());
         if (componentName == null) {
             // 不存在对应类型的activity
-            LogUtil.w("intent.resolveActivity return null! intent=" + intent);
+            LogUtils.w("intent.resolveActivity return null! intent=" + intent);
             return false;
         }
-        LogUtil.d("CameraPicker start pick,targetFile=" + mTargetFile + ",uri=" + uri);
+        LogUtils.d("CameraPicker start pick,targetFile=" + targetFile + ",uri=" + uri);
         launcher.startActivityForResult(intent, pickerConfig.getRequestCode());
         return true;
     }
@@ -69,9 +70,9 @@ public class CameraPicker implements Picker {
 
     @Nullable
     @Override
-    public File onResult(Intent data) {
+    public Uri onResult(Intent data) {
         // 直接返回图片
-        return mTargetFile;
+        return mTargetUri;
     }
 
 }

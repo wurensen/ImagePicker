@@ -22,3 +22,25 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "com.android.support:support-compat:$ANDROID_SUPPORT_VERSION"
 }
+
+// 发布插件
+apply plugin: 'com.novoda.bintray-release'
+// 配置发布参数
+publish {
+    uploadName = 'ImagePicker'
+    userOrg = 'wrs'
+    groupId = 'com.lancewu'
+    artifactId = 'ImagePicker'
+    publishVersion = '0.0.1'
+    desc = 'This is an android library which supporting picking image quickly from Camera,GalleryUI,DocumentUI and cropping image.'
+    website = 'https://github.com/wurensen/ImagePicker'
+}
+
+// 防止中文乱码
+tasks.withType(Javadoc) {
+    options {
+        encoding "UTF-8"
+        charSet 'UTF-8'
+        links "http://docs.oracle.com/javase/8/docs/api"
+    }
+}

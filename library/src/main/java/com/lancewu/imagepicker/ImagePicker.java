@@ -2,6 +2,7 @@ package com.lancewu.imagepicker;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
@@ -11,10 +12,11 @@ import com.lancewu.imagepicker.crop.DefaultCrop;
 import com.lancewu.imagepicker.launcher.FragmentLauncher;
 import com.lancewu.imagepicker.launcher.Launcher;
 import com.lancewu.imagepicker.picker.CameraPicker;
+import com.lancewu.imagepicker.picker.DocumentPicker;
 import com.lancewu.imagepicker.picker.GalleryPicker;
 import com.lancewu.imagepicker.picker.Picker;
 import com.lancewu.imagepicker.picker.PickerConfig;
-import com.lancewu.imagepicker.util.LogUtil;
+import com.lancewu.imagepicker.util.LogUtils;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -30,12 +32,14 @@ public class ImagePicker {
     private static final int REQUEST_CODE_START = 0xffff;
     // 相机
     private static final int REQUEST_CODE_CAMERA = REQUEST_CODE_START - 1;
-    // 图库
+    // 图库UI
     private static final int REQUEST_CODE_GALLERY = REQUEST_CODE_START - 2;
+    // 文档UI
+    private static final int REQUEST_CODE_DOCUMENT = REQUEST_CODE_START - 3;
     // 裁剪
-    private static final int REQUEST_CODE_CROP = REQUEST_CODE_START - 3;
+    private static final int REQUEST_CODE_CROP = REQUEST_CODE_START - 4;
     // 权限
-    private static final int REQUEST_CODE_PERMISSION = REQUEST_CODE_START - 4;
+    private static final int REQUEST_CODE_PERMISSION = REQUEST_CODE_START - 5;
     // 选择器
     private Picker mPicker;
     // 选择配置
@@ -55,20 +59,26 @@ public class ImagePicker {
         mRequestCodePermission = builder.mRequestCodePermission;
         boolean justCrop = false;
         switch (builder.mPickerType) {
-            case Builder.CAMERA_PICKER:
+            case Builder.CAMERA_PICKER: // 相机
                 mPicker = new CameraPicker();
                 mPickerConfig = new PickerConfig();
                 mPickerConfig.setRequestCode(builder.mRequestCodeCamera);
                 mPickerConfig.setActivity(builder.mActivity);
                 mPickerConfig.setImageFile(builder.mCameraPickerSaveFile);
                 break;
-            case Builder.GALLERY_PICKER:
+            case Builder.GALLERY_PICKER: // 图库UI
                 mPicker = new GalleryPicker();
                 mPickerConfig = new PickerConfig();
                 mPickerConfig.setRequestCode(builder.mRequestCodeGallery);
                 mPickerConfig.setActivity(builder.mActivity);
                 break;
-            case Builder.NONE_PICKER:
+            case Builder.DOCUMENT_PICKER: // 文档UI
+                mPicker = new DocumentPicker();
+                mPickerConfig = new PickerConfig();
+                mPickerConfig.setRequestCode(builder.mRequestCodeDocument);
+                mPickerConfig.setActivity(builder.mActivity);
+                break;
+            case Builder.NONE_PICKER: // 无选择
                 justCrop = true;
                 // 未设置选择器，也未设置裁剪
                 if (builder.mCrop == null) {
@@ -174,9 +184,9 @@ public class ImagePicker {
         }
     }
 
-    private void notifySuccess(@NonNull File file) {
+    private void notifySuccess(@NonNull Uri uri) {
         if (mCallback != null) {
-            mCallback.onPickSuccess(file);
+            mCallback.onPickSuccess(new ImagePickerResult(uri));
         }
     }
 
@@ -195,7 +205,7 @@ public class ImagePicker {
      */
     void dispatchResult(int requestCode, int resultCode, Intent data) {
         if (resultCode != Activity.RESULT_OK) {
-            LogUtil.d("cancel request!requestCode=" + requestCode + ",resultCode=" + resultCode);
+            LogUtils.d("cancel request!requestCode=" + requestCode + ",resultCode=" + resultCode);
             // 取消操作，回调
             if (mCallback != null) {
                 mCallback.onPickCancel();
@@ -206,29 +216,29 @@ public class ImagePicker {
 
         // 裁剪返回
         if (mCrop != null && mCropConfig.getRequestCode() == requestCode) {
-            File file = mCrop.onResult(data);
-            LogUtil.d("crop onResult,file=" + file);
-            if (file == null) {
+            Uri result = mCrop.onResult(data);
+            LogUtils.d("crop onResult,result=" + result);
+            if (result == null) {
                 // 选择失败，回调
                 notifyError(OnImagePickerCallback.ERROR_CROP_RESULT);
                 return;
             }
-            notifySuccess(file);
+            notifySuccess(result);
             return;
         }
 
         // 选择器返回
         if (mPickerConfig.getRequestCode() == requestCode) {
-            File file = mPicker.onResult(data);
-            LogUtil.d("pick onResult,file=" + file);
-            if (file == null) {
+            Uri result = mPicker.onResult(data);
+            LogUtils.d("pick onResult,result=" + result);
+            if (result == null) {
                 // 选择失败，回调
                 notifyError(OnImagePickerCallback.ERROR_PICK_RESULT);
                 return;
             }
             // 开启裁剪
             if (mCrop != null) {
-                mCropConfig.setInputImageFile(file); // 选择结果作为裁剪输入
+                mCropConfig.setInputImageUri(result); // 选择结果作为裁剪输入
                 boolean crop = mCrop.crop(mCropConfig, mLauncher);
                 if (!crop) {
                     notifyError(OnImagePickerCallback.ERROR_START_CROP);
@@ -236,7 +246,7 @@ public class ImagePicker {
                 return;
             }
             // 回调成功
-            notifySuccess(file);
+            notifySuccess(result);
         }
     }
 
@@ -254,14 +264,19 @@ public class ImagePicker {
          */
         static final int CAMERA_PICKER = 1;
         /**
-         * 从图库（任何支持"image/*"的Activity）选择
+         * 从图库选择（任何支持action=Intent.ACTION_PICK,type="image/*"的Activity）
          */
         static final int GALLERY_PICKER = 2;
+        /**
+         * 从系统自带文档UI选择（任何支持action=Intent.ACTION_GET_CONTENT(sdk<4.4)/Intent.ACTION_OPEN_DOCUMENT(sdk>=4.4),
+         * type="image/*"的Activity）
+         */
+        static final int DOCUMENT_PICKER = 3;
 
         /**
          * 选择器类型输入限定
          */
-        @IntDef({NONE_PICKER, CAMERA_PICKER, GALLERY_PICKER})
+        @IntDef({NONE_PICKER, CAMERA_PICKER, GALLERY_PICKER, DOCUMENT_PICKER})
         @Retention(RetentionPolicy.SOURCE)
         @interface PICKER_TYPE {
         }
@@ -281,6 +296,8 @@ public class ImagePicker {
         private int mRequestCodeCamera = REQUEST_CODE_CAMERA;
         // 请求码：打开图库
         private int mRequestCodeGallery = REQUEST_CODE_GALLERY;
+        // 请求码：打开文档
+        private int mRequestCodeDocument = REQUEST_CODE_DOCUMENT;
         // 请求码：打开裁剪
         private int mRequestCodeCrop = REQUEST_CODE_CROP;
         // 请求码：打开请求权限
@@ -296,7 +313,7 @@ public class ImagePicker {
         }
 
         /**
-         * 从图库选择
+         * 从图库UI选择
          *
          * @return this
          */
@@ -305,7 +322,7 @@ public class ImagePicker {
         }
 
         /**
-         * 从图库选择
+         * 从图库UI选择
          *
          * @param requestCode 开启图库页面请求码，出现请求码重复时可设置，默认值{@link #REQUEST_CODE_GALLERY}
          * @return this
@@ -313,6 +330,27 @@ public class ImagePicker {
         public Builder fromGallery(int requestCode) {
             mPickerType = GALLERY_PICKER;
             mRequestCodeGallery = requestCode;
+            return this;
+        }
+
+        /**
+         * 从文档UI选择
+         *
+         * @return this
+         */
+        public Builder fromDocument() {
+            return fromDocument(REQUEST_CODE_DOCUMENT);
+        }
+
+        /**
+         * 从文档UI选择
+         *
+         * @param requestCode 开启文档页面请求码，出现请求码重复时可设置，默认值{@link #REQUEST_CODE_DOCUMENT}
+         * @return this
+         */
+        public Builder fromDocument(int requestCode) {
+            mPickerType = DOCUMENT_PICKER;
+            mRequestCodeDocument = requestCode;
             return this;
         }
 

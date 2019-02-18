@@ -12,9 +12,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lancewu.imagepicker.ImagePicker;
+import com.lancewu.imagepicker.ImagePickerResult;
 import com.lancewu.imagepicker.OnImagePickerCallback;
+import com.lancewu.imagepicker.util.StreamUtils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,16 +39,17 @@ public class MainActivity extends AppCompatActivity {
     public void clickCameraCrop(View view) {
         // 从相机拍照并裁剪
         File file = new File(getExternalCacheDir(), "camera_crop.jpg");
-        // 动态申请存储权限
-//        File file = new File(Environment.getExternalStorageDirectory(), "camera_crop.jpg");
+        // 创建裁剪参数
         ImagePicker.CropConfigBuilder cropConfigBuilder = new ImagePicker.CropConfigBuilder()
-                .aspect(1, 2)
-                .outputSize(200, 400)
-                .outputFile(file);
+                .aspect(1, 2) // 比例1：2
+                .outputSize(200, 400) // 输出大小200*400
+                .outputFile(file);  // 最终文件保存路径
+        // 创建选择器
         mPicker = new ImagePicker.Builder(this)
-                .fromCamera(file)
-                .withCrop(cropConfigBuilder)
+                .fromCamera(file) // 表示从相机选择，并设置拍照保存文件
+                .withCrop(cropConfigBuilder) // 拍照完紧接裁剪
                 .build();
+        // 调用选图
         mPicker.pick(mCallback);
     }
 
@@ -57,6 +61,19 @@ public class MainActivity extends AppCompatActivity {
                 .outputFile(file);
         mPicker = new ImagePicker.Builder(this)
                 .fromGallery()
+                .withCrop(cropConfigBuilder)
+                .build();
+        mPicker.pick(mCallback);
+    }
+
+    public void clickDocumentCrop(View view) {
+        File file = new File(getExternalCacheDir(), "document_crop.jpg");
+        ImagePicker.CropConfigBuilder cropConfigBuilder = new ImagePicker.CropConfigBuilder()
+                .aspect(1, 1)
+                .outputSize(300, 300)
+                .outputFile(file);
+        mPicker = new ImagePicker.Builder(this)
+                .fromDocument()
                 .withCrop(cropConfigBuilder)
                 .build();
         mPicker.pick(mCallback);
@@ -75,6 +92,13 @@ public class MainActivity extends AppCompatActivity {
     public void clickGallery(View view) {
         mPicker = new ImagePicker.Builder(this)
                 .fromGallery()
+                .build();
+        mPicker.pick(mCallback);
+    }
+
+    public void clickDocument(View view) {
+        mPicker = new ImagePicker.Builder(this)
+                .fromDocument()
                 .build();
         mPicker.pick(mCallback);
     }
@@ -124,20 +148,32 @@ public class MainActivity extends AppCompatActivity {
     private OnImagePickerCallback mCallback = new OnImagePickerCallback() {
         @Override
         public void onPickError(@ErrorCode int errorCode) {
-            showToast("发生错误：" + errorCode);
+            // 发生错误，具体错误参考：@ErrorCode
+            showToast("ImagePicker-发生错误：" + errorCode);
         }
 
         @Override
-        public void onPickSuccess(@NonNull File imageFile) {
-            Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
-            mImageView.setImageBitmap(bitmap);
-            String text = "图片信息：宽*高=" + bitmap.getWidth() + "*" + bitmap.getHeight();
-            mInfoTv.setText(text);
+        public void onPickSuccess(@NonNull ImagePickerResult result) {
+            // 选图/裁剪回调
+            InputStream inputStream = null;
+            try {
+                // 从选择结果中取出文件Uri，进行想要的处理，这边直接显示
+                inputStream = getContentResolver().openInputStream(result.getImageUri());
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                mImageView.setImageBitmap(bitmap);
+                String text = "图片信息：宽*高=" + bitmap.getWidth() + "*" + bitmap.getHeight();
+                mInfoTv.setText(text);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } finally {
+                StreamUtils.close(inputStream);
+            }
         }
 
         @Override
         public void onPickCancel() {
-            showToast("取消选择");
+            // 主动取消选择/裁剪时回调
+            showToast("ImagePicker-取消选择");
         }
 
         void showToast(String msg) {
