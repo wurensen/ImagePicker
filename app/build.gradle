@@ -29,5 +29,5 @@ dependencies {
     // 调试时采用本地依赖
 //    implementation project(':library')
     // 使用时采用线上依赖
-    implementation 'com.lancewu:ImagePicker:0.0.2'
+    implementation 'com.lancewu:ImagePicker:0.0.3'
 }
