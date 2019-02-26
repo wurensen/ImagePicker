@@ -20,8 +20,8 @@ public class ImagePickerFileProvider extends FileProvider {
      *
      * @return String
      */
-    public static String getAuthority() {
-        return "com.lancewu.imagepicker.ImagePickerFileProvider";
+    public static String getAuthority(Context context) {
+        return context.getPackageName() + ".ImagePickerFileProvider";
     }
 
     /**
@@ -33,7 +33,7 @@ public class ImagePickerFileProvider extends FileProvider {
      */
     public static Uri getUriForFile(@NonNull Context context, @NonNull File file) {
         try {
-            return FileProvider.getUriForFile(context, getAuthority(), file);
+            return FileProvider.getUriForFile(context, getAuthority(context), file);
         } catch (Exception e) {
             e.printStackTrace();
             LogUtils.e("getUriForFile:" + file, e);

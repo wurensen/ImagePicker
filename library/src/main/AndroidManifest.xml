@@ -6,10 +6,10 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application>
-        <!--配置provider-->
+        <!--配置provider，用${applicationId}防止多app接入后重复问题-->
         <provider
             android:name=".provider.ImagePickerFileProvider"
-            android:authorities="com.lancewu.imagepicker.ImagePickerFileProvider"
+            android:authorities="${applicationId}.ImagePickerFileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
