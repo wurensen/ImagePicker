@@ -27,7 +27,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
     // 调试时采用本地依赖
-//    implementation project(':library')
+    implementation project(':library')
     // 使用时采用线上依赖
-    implementation 'com.lancewu:ImagePicker:0.0.3'
+//    implementation 'com.lancewu:ImagePicker:0.0.3'
 }

@@ -208,9 +208,6 @@ public class ImagePicker {
         if (resultCode != Activity.RESULT_OK) {
             LogUtils.d("cancel request!requestCode=" + requestCode + ",resultCode=" + resultCode);
             // 取消操作，回调
-            if (mCallback != null) {
-                mCallback.onPickCancel();
-            }
             notifyCancel();
             return;
         }

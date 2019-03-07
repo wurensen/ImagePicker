@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 
 import com.lancewu.imagepicker.util.LogUtils;
 
@@ -162,6 +163,8 @@ public class ImagePickerFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Log.d("LanceWu-ImagePicker", "Fragment.onActivityResult() called with: requestCode = ["
+                + requestCode + "], resultCode = [" + resultCode + "], data = [" + data + "]");
         // 处理结果
         if (mImagePicker != null) {
             mImagePicker.dispatchResult(requestCode, resultCode, data);

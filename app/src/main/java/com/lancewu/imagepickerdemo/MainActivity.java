@@ -1,11 +1,14 @@
 package com.lancewu.imagepickerdemo;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -24,6 +27,8 @@ import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = ImagePickerApplication.TAG;
+
     private ImageView mImageView;
     private TextView mInfoTv;
     private ImagePicker mPicker;
@@ -32,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Log.d(TAG, "onCreate() called with: savedInstanceState = [" + savedInstanceState + "]");
         mImageView = findViewById(R.id.iv);
         mInfoTv = findViewById(R.id.info_tv);
     }
@@ -92,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void clickGallery(View view) {
         mPicker = new ImagePicker.Builder(this)
-                .fromGallery()
+                .fromGallery(1)
                 .build();
         mPicker.pick(mCallback);
     }
